@@ -9,6 +9,9 @@
   },
   "version": "0.1.0",
   "dependencies": {
+    "@prismicio/client": "^6.4.1",
+    "@prismicio/helpers": "^2.2.0",
+    "@prismicio/react": "^2.1.2",
     "@stripe/stripe-js": "^1.23.0",
     "axios": "^0.26.0",
     "faunadb": "^4.5.2",
