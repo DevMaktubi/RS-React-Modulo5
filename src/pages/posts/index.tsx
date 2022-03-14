@@ -1,30 +1,22 @@
 import {client} from '../../prismic'
-import * as prismicH from '@prismicio/helpers'
+import {RichText} from 'prismic-dom'
 
 import { GetStaticProps } from 'next';
 import Head from 'next/head';
 import styles from './styles.module.scss'
 import { useEffect, useState } from 'react';
 
+type Post = {
+  slug: string;
+  title: string;
+  excerpt: string;
+  updatedAt: string;
+}
+
 interface PostsProps {
   data: Post[]
 }
-interface Post {
-  id: string;
-  last_publication_date: any;
-  data: {
-    title: [
-      {
-        text: string
-      },
-    ]
-    content: [
-      {
-        text: string;
-      }
-    ]
-  };
-}
+
 
 export default function Posts({data}: PostsProps) {
   const [posts, setPosts] = useState<Post[]>([])
@@ -42,10 +34,10 @@ export default function Posts({data}: PostsProps) {
       <main className={styles.container}>
         <div className={styles.posts}>
           {posts && posts.map(post => (
-            <a key={post.id} href='#'>
-              <time dateTime={prismicH.asDate(post.last_publication_date).toISOString()}>{prismicH.asDate(post.last_publication_date).toLocaleString()}</time>
-              <strong>{post.data.title[0].text}</strong>
-              <p>{post.data.content[0].text}</p>
+            <a key={post.slug} href='#'>
+              <time>{post.updatedAt}</time>
+              <strong>{post.title}</strong>
+              <p>{post.excerpt}</p>
             </a>
           ))}
         </div>
@@ -56,7 +48,20 @@ export default function Posts({data}: PostsProps) {
 
 export const getStaticProps: GetStaticProps = async () => {
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const posts = await client.getAllByType('post')
+  const result = await client.getAllByType('post')
+
+  const posts = result.map(post => {
+    return {
+      slug: post.uid,
+      title: RichText.asText(post.data.title),
+      excerpt: post.data.content.find( content => content.type === 'paragraph')?.text ?? '',
+      updatedAt: new Date(post.last_publication_date).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+      }),
+    }
+  })
 
   return {
     props: {
