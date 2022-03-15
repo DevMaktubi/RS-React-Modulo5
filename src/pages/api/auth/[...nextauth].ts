@@ -17,8 +17,41 @@ export default NextAuth({
     maxAge: 60 * 60 * 24 * 14, // 2 Semanas
   },
   callbacks: {
+    async session({session}) {
+      try {
+        const userActiveSubscription = await fauna.query(
+          q.Get(
+            q.Intersection(
+              [
+                q.Match(
+                  q.Index('subscription_by_user_ref'),
+                  q.Select(
+                    "ref",
+                    q.Get(
+                      q.Match(
+                        q.Index('user_by_email'),
+                        q.Casefold(session.user.email)
+                      )
+                    )
+                  )
+                ),
+                q.Match(
+                  q.Index('subscription_by_status'),
+                  'active'
+                )
+              ]
+            )
+          )
+        )
+        session.activeSubscription = userActiveSubscription
+        return session
+      } catch {
+        session.activeSubscription = null
+        return session
+      }
+      
+    },
     async signIn({ user, account, profile, email, credentials }) {
-
       // Create a new user if necessary
       try {
         await fauna.query(
